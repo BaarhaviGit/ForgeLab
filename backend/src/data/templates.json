@@ -1,0 +1,102 @@
+[
+  {
+    "id": "basic-monolith",
+    "name": "Basic Monolith",
+    "description": "A single server handling API and Database locally.",
+    "defaultConfig": {
+      "templateId": "basic-monolith",
+      "components": [
+        {
+          "type": "server",
+          "config": {
+            "cpu": 2,
+            "ram": 4,
+            "replicas": 1
+          }
+        },
+        {
+          "type": "database",
+          "config": {
+            "cpu": 2,
+            "ram": 4,
+            "replicas": 1
+          }
+        }
+      ],
+      "trafficLoad": 100
+    }
+  },
+  {
+    "id": "load-balanced",
+    "name": "Load Balanced API",
+    "description": "Multiple API replicas behind a Load Balancer with a separate Database.",
+    "defaultConfig": {
+      "templateId": "load-balanced",
+      "components": [
+        {
+          "type": "load-balancer",
+          "config": {
+            "replicas": 1
+          }
+        },
+        {
+          "type": "server",
+          "config": {
+            "cpu": 2,
+            "ram": 4,
+            "replicas": 3
+          }
+        },
+        {
+          "type": "database",
+          "config": {
+            "cpu": 4,
+            "ram": 8,
+            "replicas": 1
+          }
+        }
+      ],
+      "trafficLoad": 500
+    }
+  },
+  {
+    "id": "high-performance",
+    "name": "High Performance with Cache",
+    "description": "Load Balanced API with a Redis Cache to reduce DB load.",
+    "defaultConfig": {
+      "templateId": "high-performance",
+      "components": [
+        {
+          "type": "load-balancer",
+          "config": {
+            "replicas": 2
+          }
+        },
+        {
+          "type": "server",
+          "config": {
+            "cpu": 4,
+            "ram": 8,
+            "replicas": 5
+          }
+        },
+        {
+          "type": "cache",
+          "config": {
+            "cacheEnabled": true,
+            "ram": 16
+          }
+        },
+        {
+          "type": "database",
+          "config": {
+            "cpu": 8,
+            "ram": 32,
+            "replicas": 2
+          }
+        }
+      ],
+      "trafficLoad": 2000
+    }
+  }
+]
