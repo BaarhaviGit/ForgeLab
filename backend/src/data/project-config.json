@@ -1,0 +1,22 @@
+{
+  "templateId": "basic-monolith",
+  "components": [
+    {
+      "type": "server",
+      "config": {
+        "cpu": 2,
+        "ram": 4,
+        "replicas": 1
+      }
+    },
+    {
+      "type": "database",
+      "config": {
+        "cpu": 2,
+        "ram": 4,
+        "replicas": 1
+      }
+    }
+  ],
+  "trafficLoad": 777
+}
