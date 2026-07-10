@@ -1,22 +1,79 @@
 # ForgeLab - Engineering Simulation Sandbox
 
-ForgeLab is a lightweight engineering simulation sandbox designed to help teams visually experiment with system architectures. Users can choose predefined architecture templates, tweak configurations (CPU, replicas, cache, etc.), run load simulations, and inject failures (like a database crash or a traffic spike) to observe the effects on latency, throughput, error rates, and costs.
+**ForgeLab lets you break systems on purpose, so you learn to build ones that don't break in production.**
 
-This project was built for a 1-week hackathon. It is structured to be lean, functional, and easy for a 3-person team to collaborate on.
+Right now, if you want to understand why a database becomes a bottleneck, or why adding a cache actually helps, you either:
+1. Read a blog post about it (theory, no hands-on feel), or
+2. Break something in production and learn the hard way (expensive, risky, terrifying).
 
-## Project Structure
+ForgeLab gives you a third option: pick an architecture, run traffic through it, break it on purpose, watch exactly what happens, fix it, and immediately see the difference — all with zero real-world risk.
 
-The repository is divided into two main parts:
+---
 
-- `frontend/`: A Next.js application using Tailwind CSS, Recharts for metrics, and TypeScript.
-- `backend/`: A Node.js + Express API built with TypeScript that handles the simulation logic.
+## 🚀 How it Helps People
 
-## Prerequisites
+* **Students learning system design:** Instead of memorizing "add a cache to reduce DB load", they watch it happen. Latency numbers move in front of them.
+* **Interview Prep:** Interviewers ask "what would you do if this service got 10x traffic?" ForgeLab lets you actually simulate that instead of guessing out loud.
+* **Engineers and DevOps:** Before committing to adding Redis or a read replica in a real production system, sanity-check the tradeoff (performance vs cost) in a sandbox first.
+* **Educators:** A lab-style teaching tool. Run a live failure in front of a class and ask "so what should we add here?"
 
-- Node.js (v18 or newer recommended)
-- npm
+---
 
-## Getting Started
+## 🛠️ The Working Loop (Build, Break, Fix, Compare)
+
+1. **Pick a template** — a pre-built system architecture (e.g. Client → Load Balancer → API → Database).
+2. **Configure it** — sliders/toggles for CPU, replicas, cache on/off, traffic load.
+3. **Run the simulation** — our engine computes realistic latency, throughput, error rate, and cost based on that config.
+4. **Break it** — inject a failure (DB crash, traffic spike) and watch the metrics degrade live.
+5. **Fix it** — flip on caching, add a replica, re-run.
+6. **Compare** — side-by-side before/after: *"Latency dropped from 420ms → 110ms, availability went from 95% → 99.9%, cost went up by $30."*
+
+---
+
+## 👥 Hackathon Team Split (3 Roles)
+
+To build this in one week, the project is cleanly split into three vertical slices with clear handoff points.
+
+### 🧑‍💻 Person A — Backend & Orchestration
+**Owns:** `backend/src/index.ts`, `routes/`, project/config storage
+* **Responsibilities:**
+  * Set up Express server + CORS + routes.
+  * `POST /simulate` — receives config, calls the simulation engine, returns metrics.
+  * `POST /simulate/failure` — receives config + failure type, mutates config, returns degraded metrics.
+  * `GET /templates` — returns the 3-4 predefined architectures.
+  * Store/retrieve current project config.
+* **Deliverable:** A working API that Person B can hit with `fetch()` and get real JSON back.
+* *(Depends on Person C's `calculateMetrics()` function — can stub with fake numbers initially)*
+
+### 🎨 Person B — Frontend
+**Owns:** `frontend/` — everything the user sees and clicks
+* **Responsibilities:**
+  * Template picker page (4 cards, pick one).
+  * Config panel — sliders/toggles for CPU, replicas, cache, traffic load.
+  * "Run Simulation" button → calls Person A's `/simulate` endpoint.
+  * Results dashboard — Recharts bar/line charts for latency, throughput, error rate, cost.
+  * Failure buttons (DB Crash, Traffic Spike) → calls `/simulate/failure`.
+  * Before/after comparison view (two metric sets side by side).
+* **Deliverable:** Full clickable flow from template → configure → run → break → fix → compare.
+* *(Depends on Person A's API being live — can build against mock JSON data first)*
+
+### 🧮 Person C — Simulation Logic
+**Owns:** `backend/src/simulation/` — the math brain of the whole product
+* **Responsibilities:**
+  * `engine.ts` — the core formulas:
+    * `latency = baseLatency + (trafficLoad / capacity) * loadFactor`
+    * `errorRate` rises sharply once load exceeds capacity.
+    * `cost` scales with replicas/CPU/cache enabled.
+    * `throughput` caps out based on capacity.
+  * `failures.ts` — failure injection functions (e.g. DB crash = capacity → near 0, traffic spike = trafficLoad × 5).
+  * `explanations.ts` — canned "AI-style" text per failure type.
+  * Tune numbers so before/after actually looks dramatic and believable in the demo.
+* **Deliverable:** Pure functions Person A can import and call directly — no server knowledge needed.
+* *(Depends on Nobody. Can start immediately in isolation on Day 1)*
+
+---
+
+## ⚙️ Local Setup Instructions
 
 1. **Install dependencies for all projects:**
    Run the following from the root directory to install root, frontend, and backend dependencies:
@@ -31,31 +88,5 @@ The repository is divided into two main parts:
    ```
 
 3. **View the application:**
-   - Frontend: `http://localhost:3000`
-   - Backend API: `http://localhost:3001`
-
-## Team Work Division
-
-To make the most of the 1-week hackathon, the 3 developers can divide the work as follows:
-
-1. **Frontend & UI Developer (Next.js & Tailwind)**
-   - **Focus:** Build out the UI in `frontend/app/` and `frontend/components/`.
-   - **Tasks:**
-     - Make the UI look modern and premium (use dark modes, smooth gradients, animations).
-     - Wire up the sliders and toggles in `ConfigPanel.tsx`.
-     - Polish the dashboard and integrate `MetricsChart.tsx` using Recharts to show before/after comparisons.
-     - Connect frontend state to `lib/api.ts` to call the backend.
-
-2. **Backend API & Integration Developer (Express)**
-   - **Focus:** Set up endpoints and handle data flow in `backend/src/routes/` and `backend/src/index.ts`.
-   - **Tasks:**
-     - Ensure the `simulate.ts` and `templates.ts` routes correctly parse requests and return standardized JSON responses.
-     - Handle CORS and error states.
-     - Set up `data/templates.json` with 3-4 sensible default architectures (e.g., Basic, Load Balanced, Cached).
-
-3. **Simulation Logic Developer (TypeScript engine)**
-   - **Focus:** Implement the core simulation math and failure logic in `backend/src/simulation/`.
-   - **Tasks:**
-     - Build formula-based models in `engine.ts` to calculate latency, throughput, error rate, and cost based on `ArchitectureConfig`.
-     - Implement failure injection in `failures.ts` (e.g., temporarily mutating configuration to simulate a DB crash or traffic spike).
-     - Write contextual AI-style explanation strings in `explanations.ts`.
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - Backend API: [http://localhost:3001](http://localhost:3001)
